@@ -105,10 +105,58 @@ public class QuerydslBasicTest {
     @Test
     public void startQuerydslV2() {
 
-        Member findMember = queryFactory.select(member)
-                .from(member)
-                .where(member.username.eq("member1"))
-                .fetchOne();
+        Member findMember = queryFactory
+                                .select(member)
+                                .from(member)
+                                .where(member.username.eq("member1"))
+                                .fetchOne();
+
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    /**
+     * 기본 검색 쿼리
+     *
+     * 검색 조건은 .and(), .or() 를 메서드 체인으로 연결 가능
+     *
+     * selectFrom = select + from
+     */
+    @Test
+    public void search() {
+
+        Member findMember = queryFactory
+                            .selectFrom(member)
+                            .where(member.username.eq("member1")
+                                    .and(member.age.eq(10)))
+                            .fetchOne();
+
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+
+        // age between 10, 30
+        Member findMember2 = queryFactory
+                                .selectFrom(member)
+                                .where(member.username.eq("member1")
+                                    .and(member.age.between(10, 30)))
+                                .fetchOne();
+
+        assertThat(findMember2.getUsername()).isEqualTo("member1");
+    }
+
+    /**
+     * AND 조건을 파라미터로 처리
+     *
+     * where() 에 파라미터로 검색 조건을 추가하면 AND 조건이 추가된다.
+     */
+    @Test
+    public void searchAndParam() {
+
+        Member findMember = queryFactory
+                                .selectFrom(member)
+                                .where(
+                                    member.username.eq("member1"),
+                                    member.age.eq(10)
+                                )
+                                .fetchOne();
 
         assertThat(findMember.getUsername()).isEqualTo("member1");
     }
