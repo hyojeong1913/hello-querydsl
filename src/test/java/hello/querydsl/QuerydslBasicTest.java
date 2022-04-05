@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.persistence.EntityManager;
 
+import static hello.querydsl.entity.QMember.member;
 import static org.assertj.core.api.Assertions.*;
 
 /**
@@ -86,6 +87,28 @@ public class QuerydslBasicTest {
                                         .from(m)
                                         .where(m.username.eq("member1"))
                                         .fetchOne();
+
+        assertThat(findMember.getUsername()).isEqualTo("member1");
+    }
+
+    /**
+     * 기본 인스턴스를 static import 와 함께 사용
+     *
+     * Q 클래스 인스턴스를 사용하는 2가지 방법
+     * - 별칭 직접 지정
+     *      예) QMember qMember = new QMember("m");
+     * - 기본 인스턴스 사용
+     *      예) QMember qMember = QMember.member;
+     *
+     * 같은 테이블을 조인해야 하는 경우가 아니면 기본 인스턴스를 사용하는 것이 좋음.
+     */
+    @Test
+    public void startQuerydslV2() {
+
+        Member findMember = queryFactory.select(member)
+                .from(member)
+                .where(member.username.eq("member1"))
+                .fetchOne();
 
         assertThat(findMember.getUsername()).isEqualTo("member1");
     }
