@@ -2,6 +2,8 @@ package hello.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.dsl.CaseBuilder;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import hello.querydsl.entity.Member;
@@ -568,6 +570,92 @@ public class QuerydslBasicTest {
         for (Tuple tuple : result) {
 
             System.out.println("tuple = " + tuple);
+        }
+    }
+
+    /**
+     * 단순한 조건
+     */
+    @Test
+    public void basicCase() {
+
+        List<String> result = queryFactory
+                                .select(
+                                        member.age
+                                                .when(10)
+                                                    .then("10살")
+                                                .when(20)
+                                                    .then("20살")
+                                                .otherwise("기타")
+                                )
+                                .from(member)
+                                .fetch();
+
+        for (String s : result) {
+
+            System.out.println("s = " + s);
+        }
+    }
+
+    /**
+     * 복잡한 조건
+     */
+    @Test
+    public void complexCase() {
+
+        List<String> result = queryFactory
+                                .select(
+                                        new CaseBuilder()
+                                                .when(
+                                                        member.age
+                                                                .between(0, 20))
+                                                                    .then("0 ~ 20살")
+                                                                .when(member.age.between(21, 30))
+                                                                    .then("21 ~ 30살")
+                                                                .otherwise("기타")
+                                                )
+                                .from(member)
+                                .fetch();
+
+        for (String s : result) {
+
+            System.out.println("s = " + s);
+        }
+    }
+
+    /**
+     * 임의의 순서로 회원을 출력
+     *
+     * rankPath 처럼 복잡한 조건을 변수로 선언해서 select 절, orderBy 절에서 함께 사용 가능
+     *
+     * 1. 0 ~ 30살이 아닌 회원을 가장 먼저 출력
+     * 2. 0 ~ 20살 회원 출력
+     * 3. 21 ~ 30살 회원 출력
+     */
+    @Test
+    public void orderByCase() {
+
+        NumberExpression<Integer> rankPath = new CaseBuilder()
+                                                .when(member.age.between(0, 20))
+                                                    .then(2)
+                                                .when(member.age.between(21, 30))
+                                                    .then(1)
+                                                .otherwise(3);
+
+        List<Tuple> result = queryFactory
+                                .select(member.username, member.age, rankPath)
+                                .from(member)
+                                .orderBy(rankPath.desc())
+                                .fetch();
+
+        for (Tuple tuple : result) {
+
+            String username = tuple.get(member.username);
+
+            Integer age = tuple.get(member.age);
+            Integer rank = (Integer) tuple.get(rankPath);
+
+            System.out.println("username = " + username + ", age = " + age + ", rank = " + rank);
         }
     }
 }
