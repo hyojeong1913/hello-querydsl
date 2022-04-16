@@ -698,4 +698,49 @@ public class QuerydslBasicTest {
             System.out.println("s = " + s);
         }
     }
+
+    /**
+     * 프로젝션 대상이 하나
+     *
+     * select 대상 지정
+     *
+     * 프로젝션 대상이 하나면 타입을 명확하게 지정 가능
+     * 프로젝션 대상이 둘 이상이면 튜플이나 DTO 로 조회
+     */
+    @Test
+    public void simpleProjection() {
+
+        List<String> result = queryFactory
+                                .select(member.username)
+                                .from(member)
+                                .fetch();
+
+        for (String s : result) {
+
+            System.out.println("s = " + s);
+        }
+    }
+
+    /**
+     * 튜플 조회
+     *
+     * 프로젝션 대상이 둘 이상일 때 사용
+     */
+    @Test
+    public void tupleProjection() {
+
+        List<Tuple> result = queryFactory
+                                .select(member.username, member.age)
+                                .from(member)
+                                .fetch();
+
+        for (Tuple tuple : result) {
+
+            String username = tuple.get(member.username);
+            Integer age = tuple.get(member.age);
+
+            System.out.println("username = " + username);
+            System.out.println("age = " + age);
+        }
+    }
 }
