@@ -2,11 +2,15 @@ package hello.querydsl;
 
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.Tuple;
+import com.querydsl.core.types.ExpressionUtils;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.CaseBuilder;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import hello.querydsl.dto.MemberDto;
+import hello.querydsl.dto.UserDto;
 import hello.querydsl.entity.Member;
 import hello.querydsl.entity.QMember;
 import hello.querydsl.entity.QTeam;
@@ -741,6 +745,132 @@ public class QuerydslBasicTest {
 
             System.out.println("username = " + username);
             System.out.println("age = " + age);
+        }
+    }
+
+    /**
+     * 순수 JPA 에서 DTO 조회
+     *
+     * 단점
+     * : DTO 의 package 이름을 다 적어줘야 하므로 지저분
+     * : 생성자 방식만 지원
+     */
+    @Test
+    public void findDtoByJPQL() {
+
+        // 순수 JPA 에서 DTO 를 조회할 때는 new 명령어 사용
+        List<MemberDto> result = em.createQuery(
+                            "SELECT new hello.querydsl.dto.MemberDto(m.username, m.age) " +
+                                    "FROM Member m",
+                                    MemberDto.class
+                                )
+                                .getResultList();
+
+        for (MemberDto memberDto : result) {
+
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    /**
+     * Querydsl 빈 생성(Bean population) 1 번째 방법
+     *
+     * 프로퍼티 접근 - Setter
+     */
+    @Test
+    public void findDtoBySetter() {
+
+        List<MemberDto> result = queryFactory
+                                    .select(Projections.bean(
+                                            MemberDto.class,
+                                            member.username,
+                                            member.age
+                                    ))
+                                    .from(member)
+                                    .fetch();
+
+        for (MemberDto memberDto : result) {
+
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    /**
+     * Querydsl 빈 생성(Bean population) 2 번째 방법
+     *
+     * 필드 직접 접근
+     */
+    @Test
+    public void findDtoByField() {
+
+        List<MemberDto> result = queryFactory
+                .select(Projections.fields(
+                        MemberDto.class,
+                        member.username,
+                        member.age
+                ))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    /**
+     * Querydsl 빈 생성(Bean population) 3 번째 방법
+     *
+     * 생성자 사용
+     */
+    @Test
+    public void findDtoByConstructor() {
+
+        List<MemberDto> result = queryFactory
+                .select(Projections.constructor(
+                        MemberDto.class,
+                        member.username,
+                        member.age
+                ))
+                .from(member)
+                .fetch();
+
+        for (MemberDto memberDto : result) {
+
+            System.out.println("memberDto = " + memberDto);
+        }
+    }
+
+    /**
+     * 필드 직접 접근 시 별칭이 다를 때
+     *
+     * 프로퍼티나 필드 접근 생성 방식에서 이름이 다를 때 해결 방안
+     *
+     * ExpressionUtils.as(source,alias) : 필드나 서브 쿼리에 별칭 적용
+     * username.as("xxx") : 필드에 별칭 적용
+     */
+    @Test
+    public void findUserDto() {
+
+        QMember memberSub = new QMember("memberSub");
+
+        List<UserDto> result = queryFactory
+                .select(Projections.fields(
+                        UserDto.class,
+                        member.username.as("name"),
+                        ExpressionUtils.as(
+                                JPAExpressions
+                                        .select(memberSub.age.max())
+                                        .from(memberSub),
+                                "age"
+                        )
+                ))
+                .from(member)
+                .fetch();
+
+        for (UserDto userDto : result) {
+
+            System.out.println("userDto = " + userDto);
         }
     }
 }
