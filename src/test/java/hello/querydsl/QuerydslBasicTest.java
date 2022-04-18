@@ -10,6 +10,7 @@ import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import hello.querydsl.dto.MemberDto;
+import hello.querydsl.dto.QMemberDto;
 import hello.querydsl.dto.UserDto;
 import hello.querydsl.entity.Member;
 import hello.querydsl.entity.QMember;
@@ -871,6 +872,32 @@ public class QuerydslBasicTest {
         for (UserDto userDto : result) {
 
             System.out.println("userDto = " + userDto);
+        }
+    }
+
+    /**
+     * 프로젝션과 결과 반환 - @QueryProjection
+     *
+     * ./gradlew compileQuerydsl 로 QMemberDto 생성 확인
+     *
+     * 장점
+     * : 컴파일러로 타입을 체크할 수 있으므로 가장 안전한 방법
+     *
+     * 단점
+     * : DTO 에 QueryDSL 어노테이션을 유지해야하는 점
+     * : DTO 까지 Q 파일을 생성해야 하는 점
+     */
+    @Test
+    public void findDtoByQueryProjection() {
+
+        List<MemberDto> result = queryFactory
+                                    .select(new QMemberDto(member.username, member.age))
+                                    .from(member)
+                                    .fetch();
+
+        for (MemberDto memberDto : result) {
+
+            System.out.println("memberDto = " + memberDto);
         }
     }
 }
