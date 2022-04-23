@@ -1050,4 +1050,62 @@ public class QuerydslBasicTest {
                         .where(member.age.gt(18))
                         .execute();
     }
+
+    /**
+     * SQL function 은 JPA 와 같이 Dialect 에 등록된 내용만 호출 가능
+     *
+     * member M으로 변경하는 replace 함수 사용
+     */
+    @Test
+    public void sqlFunction() {
+
+        List<String> result = queryFactory
+                                .select(
+                                        Expressions.stringTemplate(
+                                                "function('replace', {0}, {1}, {2})",
+                                                member.username,
+                                                "member",
+                                                "M"
+                                        )
+                                )
+                                .from(member)
+                                .fetch();
+
+        for (String str : result) {
+
+            System.out.println("str = " + str);
+        }
+    }
+
+    /**
+     * 소문자로 변경해서 비교
+     *
+     * ansi 표준 함수들은 querydsl 이 상당부분 내장하고 있어 lower() 함수 사용하여 처리 가능
+     */
+    @Test
+    public void sqlFunction2() {
+
+        List<String> result = queryFactory
+                                .select(member.username)
+                                .from(member)
+//                                .where(
+//                                        member.username.eq(
+//                                                Expressions.stringTemplate(
+//                                                        "function('lower', {0})",
+//                                                                member.username
+//                                                )
+//                                        )
+//                                )
+                                .where(
+                                        member.username.eq(
+                                                member.username.lower()
+                                        )
+                                )
+                                .fetch();
+
+        for (String str : result) {
+
+            System.out.println("str = " + str);
+        }
+    }
 }
