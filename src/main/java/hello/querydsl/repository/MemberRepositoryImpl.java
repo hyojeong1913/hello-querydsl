@@ -1,7 +1,10 @@
 package hello.querydsl.repository;
 
 import com.querydsl.core.QueryResults;
+import com.querydsl.core.types.Order;
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.PathBuilder;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import hello.querydsl.dto.MemberSearchCondition;
@@ -11,6 +14,7 @@ import hello.querydsl.entity.Member;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.support.PageableExecutionUtils;
 
 import javax.persistence.EntityManager;
@@ -160,5 +164,35 @@ public class MemberRepositoryImpl implements MemberRepositoryCustom {
     private BooleanExpression ageLoe(Integer ageLoe) {
 
         return ageLoe != null ? member.age.loe(ageLoe) : null;
+    }
+
+    /**
+     * 스프링 데이터 Sort 를 Querydsl 의 OrderSpecifier 로 변환
+     *
+     * 루트 엔티티 범위를 넘어가는 동적 정렬 기능이 필요하면
+     * 스프링 데이터 페이징이 제공하는 Sort 를 사용하기 보다는
+     * 파라미터를 받아서 직접 처리하는 것을 권장
+     *
+     * @param condition
+     * @param pageable
+     * @return
+     */
+    public List<Member> sort_orderSpecifier(MemberSearchCondition condition, Pageable pageable) {
+
+        JPAQuery<Member> query = queryFactory.selectFrom(member);
+
+        for (Sort.Order o : pageable.getSort()) {
+
+            PathBuilder pathBuilder = new PathBuilder(member.getType(), member.getMetadata());
+
+            query.orderBy(
+                    new OrderSpecifier(
+                            o.isAscending() ? Order.ASC : Order.DESC,
+                            pathBuilder.get(o.getProperty())
+                    )
+            );
+        }
+
+        return query.fetch();
     }
 }
